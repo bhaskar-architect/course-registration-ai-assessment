@@ -1,98 +1,37 @@
-# Course Registration – AI-Assisted Engineering Assessment
+# Course Registration and FIFO Waitlist API
 
-AI-Assisted Course Enrollment, Drop, and FIFO Waitlist Promotion using Java and Spring Boot.
+A Spring Boot REST API for course creation, student enrollment, capacity management, prerequisite validation, and FIFO waitlist promotion.
 
-## 1. Project Overview
+## 1. Technology Stack
 
-This project implements a bounded course-registration workflow supporting:
+- Java 21
+- Spring Boot
+- Spring Web
+- Spring Data JPA
+- Hibernate
+- H2 in-memory database
+- Maven
+- JUnit 5 and Mockito
 
-- Student enrollment.
-- Course capacity validation.
-- Prerequisite validation.
-- Duplicate enrollment prevention.
-- FIFO waitlist management.
-- Enrollment cancellation.
-- Automatic promotion of eligible waitlisted students when a seat becomes available.
+## 2. Project Features
 
-The implementation is based on the supplied Spring Boot starter project and focuses on one course offering.
+- Create, retrieve, update, and delete courses.
+- Enroll students in courses.
+- Check course capacity during enrollment.
+- Prevent duplicate enrollment.
+- Validate prerequisite completion.
+- Place students on a waitlist when a course is full.
+- Promote eligible waitlisted students in FIFO order when a seat becomes available.
+- Mark ineligible waitlisted students as `INELIGIBLE` and continue checking the queue.
+- Retrieve enrollment details.
+- Drop an existing enrollment.
 
-## 2. Technology Stack
+## 3. Prerequisites
 
-| Technology | Version / Details |
-|---|---|
-| Java | 21 |
-| Spring Boot | 4.2.0 |
-| Spring Web MVC | REST APIs |
-| Spring Data JPA | Persistence |
-| Hibernate | ORM |
-| H2 Database | In-memory database |
-| Maven | Build tool |
-| JUnit / Mockito | Automated testing |
+Install the following:
 
-## 3. Application Architecture
-
-The application follows a layered architecture:
-
-```text
-Client
-  |
-  v
-REST Controllers
-  |
-  v
-Service Layer
-  |
-  +----------------------+
-  |                      |
-  v                      v
-CourseRepository   EnrollmentRepository
-  |                      |
-  +----------+-----------+
-             |
-             v
-         H2 Database
-```
-
-### Main Components
-
-- **Controller:** Exposes course and enrollment REST APIs.
-- **Service:** Implements enrollment, dropping, capacity validation, and waitlist promotion.
-- **Repository:** Handles persistence and enrollment queries.
-- **Entity:** Represents Course and Enrollment data.
-- **Exception Handler:** Provides consistent error responses.
-
-## 4. Key Business Rules
-
-### Enrollment
-
-- A student can enroll only once in a course.
-- A student must satisfy the prerequisite requirement.
-- If seats are available, the enrollment status becomes `ENROLLED`.
-- If the course is full, an eligible student is added to the waitlist as `WAITLISTED`.
-- Students who do not satisfy prerequisites are marked `INELIGIBLE`.
-
-### Waitlist Promotion
-
-- Waitlisted students are processed in FIFO order using their creation timestamp.
-- When an enrolled student drops the course, a seat becomes available.
-- The earliest eligible waitlisted student is promoted to `ENROLLED`.
-- An ineligible waitlisted student is marked `INELIGIBLE`, and processing continues with the next eligible student.
-
-### Enrollment Statuses
-
-| Status | Description |
-|---|---|
-| ENROLLED | Student successfully enrolled |
-| WAITLISTED | Eligible student waiting for a seat |
-| DROPPED | Enrollment cancelled |
-| INELIGIBLE | Student does not satisfy prerequisites |
-
-## 5. Prerequisites
-
-Install the following before running the application:
-
-- Java Development Kit (JDK) 21.
-- Maven (optional if using the included Maven Wrapper).
+- Java 21 or later.
+- Maven, if you are not using the Maven Wrapper.
 - Git.
 
 Verify Java installation:
@@ -101,143 +40,268 @@ Verify Java installation:
 java -version
 ```
 
-## 6. Setup and Execution
-
-### Clone the repository
+## 4. Clone the Repository
 
 ```bash
 git clone https://github.com/bhaskar-architect/course-registration-ai-assessment.git
-```
-
-### Navigate to the project
-
-```bash
 cd course-registration-ai-assessment
 ```
 
-### Build the application
+## 5. Build and Run
 
-Windows:
+### Windows
 
-```bash
-mvnw.cmd clean install
-```
-
-Linux / macOS:
-
-```bash
-./mvnw clean install
-```
-
-### Run automated tests
-
-Windows:
+Run tests:
 
 ```bash
 mvnw.cmd clean test
 ```
 
-Linux / macOS:
-
-```bash
-./mvnw clean test
-```
-
-### Run the application
-
-Windows:
+Start the application:
 
 ```bash
 mvnw.cmd spring-boot:run
 ```
 
-Linux / macOS:
+### Linux / macOS
+
+Run tests:
+
+```bash
+./mvnw clean test
+```
+
+Start the application:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-The application uses Spring Boot's default HTTP port unless configured otherwise.
+The examples below assume the application is running locally on port `8080`.
 
-## 7. Database Configuration
-
-The application uses an H2 in-memory database.
-
-Configuration is maintained in:
-
-`src/main/resources/application.yaml`
-
-```yaml
-spring:
-  application:
-    name: course-registration
-
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-```
-
-H2 Console:
+Base URL:
 
 ```text
-http://localhost:8080/h2-console
+http://localhost:8080
 ```
 
-JDBC URL:
+## 6. REST API Reference
+
+All request and response bodies use JSON.
+
+### 6.1 Course APIs
+
+#### Create a Course
+
+**POST** `/api/courses`
+
+Request:
+
+```json
+{
+  "courseName": "Java Programming",
+  "capacity": 2
+}
+```
+
+Successful response — `201 Created`:
+
+```json
+{
+  "id": 1,
+  "courseName": "Java Programming",
+  "capacity": 2
+}
+```
+
+#### Get All Courses
+
+**GET** `/api/courses`
+
+Successful response — `200 OK`:
+
+```json
+[
+  {
+    "id": 1,
+    "courseName": "Java Programming",
+    "capacity": 2
+  }
+]
+```
+
+#### Update a Course
+
+**PUT** `/api/courses/{id}`
+
+Example:
+
+**PUT** `/api/courses/1`
+
+Request:
+
+```json
+{
+  "courseName": "Advanced Java",
+  "capacity": 3
+}
+```
+
+Successful response — `200 OK`:
+
+```json
+{
+  "id": 1,
+  "courseName": "Advanced Java",
+  "capacity": 3
+}
+```
+
+#### Delete a Course
+
+**DELETE** `/api/courses/{id}`
+
+Example:
 
 ```text
-jdbc:h2:mem:testdb
+DELETE http://localhost:8080/api/courses/1
 ```
 
-## 8. REST API Overview
+Successful response — `204 No Content`.
 
-The application exposes REST APIs for course and enrollment operations.
+### 6.2 Enrollment APIs
 
-Base paths:
+#### Enroll a Student
+
+**POST** `/api/enrollments`
+
+Request:
+
+```json
+{
+  "studentId": 101,
+  "courseId": 1,
+  "prerequisiteCompleted": true
+}
+```
+
+Successful response — `201 Created`:
+
+```json
+{
+  "id": 1,
+  "studentId": 101,
+  "courseId": 1,
+  "courseName": "Java Programming",
+  "status": "ENROLLED",
+  "createdAt": "2026-11-25T10:30:00",
+  "prerequisiteCompleted": true
+}
+```
+
+The `status` value depends on the enrollment outcome. For example, a student may be enrolled or placed on the waitlist, depending on course capacity and eligibility.
+
+#### Get All Enrollments
+
+**GET** `/api/enrollments`
+
+Successful response — `200 OK`:
+
+```json
+[
+  {
+    "id": 1,
+    "studentId": 101,
+    "courseId": 1,
+    "courseName": "Java Programming",
+    "status": "ENROLLED",
+    "createdAt": "2026-11-25T10:30:00",
+    "prerequisiteCompleted": true
+  }
+]
+```
+
+#### Get Enrollment by ID
+
+**GET** `/api/enrollments/{enrollmentId}`
+
+Example:
 
 ```text
-/api/courses
-/api/enrollments
+GET http://localhost:8080/api/enrollments/1
 ```
 
-Enrollment operations include:
+Successful response — `200 OK`:
 
-- Creating an enrollment.
-- Retrieving enrollment details.
-- Retrieving enrollment records.
-- Dropping an enrollment and triggering waitlist promotion.
+```json
+{
+  "id": 1,
+  "studentId": 101,
+  "courseId": 1,
+  "courseName": "Java Programming",
+  "status": "ENROLLED",
+  "createdAt": "2026-11-25T10:30:00",
+  "prerequisiteCompleted": true
+}
+```
 
-Refer to the controller classes for the exact HTTP methods, endpoint paths, request formats, and response structures.
+#### Drop an Enrollment
 
-## 9. Automated Testing
+**DELETE** `/api/enrollments/{enrollmentId}`
 
-The project includes unit and controller/application tests.
+Example:
 
-Test coverage includes:
+```text
+DELETE http://localhost:8080/api/enrollments/1
+```
 
-- Enrollment when seats are available.
-- Waitlisting when the course is full.
-- Duplicate enrollment prevention.
-- Prerequisite validation.
-- Invalid course handling.
-- FIFO waitlist promotion.
-- Skipping ineligible waitlisted students.
-- Invalid enrollment handling.
-- Repeated drop prevention.
-- Controller and application behavior.
+Successful response — `204 No Content`.
 
-### Verification Evidence
+Dropping an enrollment can trigger FIFO waitlist promotion when a seat becomes available.
 
-Reported Maven test execution:
+## 7. Error Response Structure
+
+The application includes an `ErrorResponse` DTO with the following fields:
+
+```json
+{
+  "timestamp": "2026-11-25T10:30:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Example error message",
+  "path": "/api/enrollments"
+}
+```
+
+This illustrates the response structure. Actual error messages and HTTP status codes depend on the error-handling implementation and the particular failure.
+
+## 8. Testing with Postman
+
+Use the following sequence to exercise the main API workflow.
+
+1. Start the application.
+2. Create a course using `POST /api/courses`.
+3. Create another course if needed for additional scenarios.
+4. Enroll a student using `POST /api/enrollments`.
+5. Enroll another student in the same course.
+6. Fill the course capacity.
+7. Submit another enrollment to exercise the waitlist workflow.
+8. Retrieve enrollments using `GET /api/enrollments`.
+9. Retrieve an individual enrollment using `GET /api/enrollments/{enrollmentId}`.
+10. Drop an enrolled student using `DELETE /api/enrollments/{enrollmentId}`.
+11. Check enrollment records to examine the resulting waitlist promotion.
+
+Use the IDs returned by the API responses in subsequent requests.
+
+## 9. Automated Test Evidence
+
+The AI Usage Record documents the following reported test execution:
+
+Command:
+
+```bash
+mvn clean test
+```
 
 | Test Class | Tests |
 |---|---:|
@@ -247,63 +311,53 @@ Reported Maven test execution:
 | EnrollmentServiceImplTest | 13 |
 | **Total** | **23** |
 
-Result:
+Reported result:
 
 - Tests run: 23
 - Failures: 0
 - Errors: 0
 - Skipped: 0
-- Build: BUILD SUCCESS
+- Build result: `BUILD SUCCESS`
 
-## 10. AI-Assisted Engineering
+Run the tests locally to verify the current repository state.
 
-AI was used as an engineering assistant for:
+## 10. Design and Implementation Notes
 
-- Assessment requirement analysis.
-- Existing implementation review.
-- Test coverage review.
-- Design specification preparation.
-- Technical risk identification.
-- Documentation preparation.
+The application separates responsibilities across controllers, services, repositories, entities, and DTOs.
 
-AI suggestions were reviewed against the supplied implementation and assessment acceptance criteria.
+- Controllers expose REST endpoints.
+- Services implement course and enrollment business rules.
+- Repositories handle persistence operations.
+- DTOs define API request and response structures.
+- JPA and Hibernate provide persistence integration.
 
-No AI-generated application code changes are claimed in the AI usage record.
-
-Refer to `AI-USAGE-RECORD.md` for details.
+The enrollment workflow checks course capacity and prerequisite completion. When capacity is unavailable, eligible students can be waitlisted. When a seat becomes available, the earliest eligible waitlisted student is considered for promotion.
 
 ## 11. Known Limitations and Risks
 
-- The application currently uses an H2 in-memory database.
-- Explicit locking is not implemented for enrollment capacity validation.
-- A database-level unique constraint for the student-course pair is not present in the supplied entity.
-- Concurrent enrollment requests could potentially exceed course capacity.
-- Production database behavior and concurrency guarantees have not been demonstrated.
+- Explicit locking for enrollment capacity validation is not implemented.
+- Concurrent enrollment requests may create a race condition and could exceed the configured course capacity.
+- No dedicated concurrent enrollment test is included in the reported test results.
+- The H2 in-memory database does not provide persistent data across application restarts.
+- The reported test results do not establish production-level concurrency guarantees.
 
-These limitations are documented as follow-up risks and are not represented as implemented features.
+These limitations are documented rather than claiming production-grade concurrency behavior.
 
-## 12. Project Documentation
+## 12. Additional Documentation
 
-The repository includes:
+Refer to the following project documents for more information:
 
-| Document | Purpose |
-|---|---|
-| `README.md` | Project overview and setup instructions |
-| `DESIGN-SPECIFICATION.md` | Architecture, workflow, data model, and design decisions |
-| `AI-USAGE-RECORD.md` | AI prompts, assistance, decisions, and verification evidence |
-| `LIMITATIONS-AND-RISKS.md` | Known limitations and follow-up risks |
-| `Course-Registration-Rubric-Score.md` | Independent evidence-based assessment scorecard; not the official assessment-owner rubric |
+- `DESIGN-SPECIFICATION.md` — architecture, workflow, and design decisions.
+- `LIMITATIONS-AND-RISKS.md` — known limitations and technical risks.
+- `AI-USAGE-RECORD.md` — AI-assisted engineering activities and verification evidence.
+- `Course-Registration-Rubric-Score.md` — assessment-oriented implementation review.
 
-## 13. Assessment Scope
+## 13. Repository
 
-This implementation focuses only on the requested one-course-offering enrollment, drop, and FIFO waitlist-promotion workflow.
+GitHub:
 
-The project intentionally excludes frontend development, payments, identity integrations, multi-term registration, and additional infrastructure.
+https://github.com/bhaskar-architect/course-registration-ai-assessment
 
 ---
 
-**Project:** Course Registration – AI-Assisted Engineering Assessment
-
-**Repository:** https://github.com/bhaskar-architect/course-registration-ai-assessment
-
-**Technology:** Java 21 | Spring Boot | Spring Data JPA | H2 | Maven
+**End of README**
