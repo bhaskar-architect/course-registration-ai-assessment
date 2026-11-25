@@ -1,125 +1,243 @@
-# Course Registration – Course Waitlist
+# Course Registration – AI-Assisted Engineering Assessment
+
+AI-Assisted Course Enrollment, Drop, and FIFO Waitlist Promotion using Java and Spring Boot.
 
 ## 1. Project Overview
 
-This project implements a course registration and waitlist management feature using Spring Boot.
-
-The application supports the following functionalities:
+This project implements a bounded course-registration workflow supporting:
 
 - Student enrollment.
 - Course capacity validation.
-- Waitlist management.
-- Duplicate enrollment prevention.
 - Prerequisite validation.
+- Duplicate enrollment prevention.
+- FIFO waitlist management.
 - Enrollment cancellation.
-- FIFO (First-In, First-Out) waitlist promotion.
+- Automatic promotion of eligible waitlisted students when a seat becomes available.
 
-The implementation focuses on one course offering and follows the requirements defined in the AI-Assisted Engineering Assessment.
+The implementation is based on the supplied Spring Boot starter project and focuses on one course offering.
 
 ## 2. Technology Stack
 
-| Technology | Version / Purpose |
+| Technology | Version / Details |
 |---|---|
 | Java | 21 |
 | Spring Boot | 4.2.0 |
+| Spring Web MVC | REST APIs |
 | Spring Data JPA | Persistence |
 | Hibernate | ORM |
 | H2 Database | In-memory database |
 | Maven | Build tool |
-| JUnit 5 | Unit testing |
-| Mockito | Mocking framework |
+| JUnit / Mockito | Automated testing |
 
-## 3. Prerequisites
+## 3. Application Architecture
 
-Ensure the following software is installed:
+The application follows a layered architecture:
 
-- JDK 21
-- Apache Maven
-- IntelliJ IDEA or any Java IDE
+```text
+Client
+  |
+  v
+REST Controllers
+  |
+  v
+Service Layer
+  |
+  +----------------------+
+  |                      |
+  v                      v
+CourseRepository   EnrollmentRepository
+  |                      |
+  +----------+-----------+
+             |
+             v
+         H2 Database
+```
 
-Verify the installation:
+### Main Components
+
+- **Controller:** Exposes course and enrollment REST APIs.
+- **Service:** Implements enrollment, dropping, capacity validation, and waitlist promotion.
+- **Repository:** Handles persistence and enrollment queries.
+- **Entity:** Represents Course and Enrollment data.
+- **Exception Handler:** Provides consistent error responses.
+
+## 4. Key Business Rules
+
+### Enrollment
+
+- A student can enroll only once in a course.
+- A student must satisfy the prerequisite requirement.
+- If seats are available, the enrollment status becomes `ENROLLED`.
+- If the course is full, an eligible student is added to the waitlist as `WAITLISTED`.
+- Students who do not satisfy prerequisites are marked `INELIGIBLE`.
+
+### Waitlist Promotion
+
+- Waitlisted students are processed in FIFO order using their creation timestamp.
+- When an enrolled student drops the course, a seat becomes available.
+- The earliest eligible waitlisted student is promoted to `ENROLLED`.
+- An ineligible waitlisted student is marked `INELIGIBLE`, and processing continues with the next eligible student.
+
+### Enrollment Statuses
+
+| Status | Description |
+|---|---|
+| ENROLLED | Student successfully enrolled |
+| WAITLISTED | Eligible student waiting for a seat |
+| DROPPED | Enrollment cancelled |
+| INELIGIBLE | Student does not satisfy prerequisites |
+
+## 5. Prerequisites
+
+Install the following before running the application:
+
+- Java Development Kit (JDK) 21.
+- Maven (optional if using the included Maven Wrapper).
+- Git.
+
+Verify Java installation:
 
 ```bash
 java -version
-mvn -version
 ```
 
-## 4. Project Setup
+## 6. Setup and Execution
 
-1. Clone or download the project.
-2. Open the project in IntelliJ IDEA.
-3. Navigate to the project root directory.
-4. Ensure Maven dependencies are downloaded.
-5. Build the project.
+### Clone the repository
 
 ```bash
-mvn clean compile
+git clone https://github.com/bhaskar-architect/course-registration-ai-assessment.git
 ```
 
-## 5. Run the Application
-
-Execute the following command from the project root directory:
+### Navigate to the project
 
 ```bash
-mvn spring-boot:run
+cd course-registration-ai-assessment
 ```
 
-The application uses port 8080 by default.
+### Build the application
 
-## 6. Database Configuration
+Windows:
+
+```bash
+mvnw.cmd clean install
+```
+
+Linux / macOS:
+
+```bash
+./mvnw clean install
+```
+
+### Run automated tests
+
+Windows:
+
+```bash
+mvnw.cmd clean test
+```
+
+Linux / macOS:
+
+```bash
+./mvnw clean test
+```
+
+### Run the application
+
+Windows:
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+Linux / macOS:
+
+```bash
+./mvnw spring-boot:run
+```
+
+The application uses Spring Boot's default HTTP port unless configured otherwise.
+
+## 7. Database Configuration
 
 The application uses an H2 in-memory database.
 
-Configuration:
+Configuration is maintained in:
 
-- Database: H2
-- JDBC URL: jdbc:h2:mem:testdb
-- Hibernate DDL: update
-- H2 Console: Enabled
-- Console Path: /h2-console
+`src/main/resources/application.yaml`
 
-Access the H2 console:
+```yaml
+spring:
+  application:
+    name: course-registration
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+```
+
+H2 Console:
 
 ```text
 http://localhost:8080/h2-console
 ```
 
-The database is in-memory, so data is not retained after application shutdown.
+JDBC URL:
 
-## 7. Enrollment Business Rules
-
-The application follows these business rules:
-
-1. A student can enroll in a course only once.
-2. Students must satisfy prerequisite requirements.
-3. Students are enrolled when course capacity is available.
-4. Eligible students are added to the waitlist when capacity is full.
-5. Dropping an enrolled student releases a seat.
-6. The earliest eligible waitlisted student is promoted.
-7. Ineligible waitlisted students are marked as INELIGIBLE and skipped during promotion.
-8. Duplicate and invalid drop requests are rejected.
-
-## 8. Waitlist Promotion Strategy
-
-The application follows the FIFO (First-In, First-Out) approach.
-
-When an enrolled student drops:
-
-1. The enrollment status changes to DROPPED.
-2. Waitlisted students are retrieved in ascending creation-time order.
-3. The earliest eligible student is identified.
-4. That student is promoted to ENROLLED.
-5. Ineligible students are skipped and marked INELIGIBLE.
-
-## 9. Running Automated Tests
-
-Execute the following command:
-
-```bash
-mvn clean test
+```text
+jdbc:h2:mem:testdb
 ```
 
-### Latest Test Execution Results
+## 8. REST API Overview
+
+The application exposes REST APIs for course and enrollment operations.
+
+Base paths:
+
+```text
+/api/courses
+/api/enrollments
+```
+
+Enrollment operations include:
+
+- Creating an enrollment.
+- Retrieving enrollment details.
+- Retrieving enrollment records.
+- Dropping an enrollment and triggering waitlist promotion.
+
+Refer to the controller classes for the exact HTTP methods, endpoint paths, request formats, and response structures.
+
+## 9. Automated Testing
+
+The project includes unit and controller/application tests.
+
+Test coverage includes:
+
+- Enrollment when seats are available.
+- Waitlisting when the course is full.
+- Duplicate enrollment prevention.
+- Prerequisite validation.
+- Invalid course handling.
+- FIFO waitlist promotion.
+- Skipping ineligible waitlisted students.
+- Invalid enrollment handling.
+- Repeated drop prevention.
+- Controller and application behavior.
+
+### Verification Evidence
+
+Reported Maven test execution:
 
 | Test Class | Tests |
 |---|---:|
@@ -129,39 +247,63 @@ mvn clean test
 | EnrollmentServiceImplTest | 13 |
 | **Total** | **23** |
 
-Test execution summary:
+Result:
 
-- Total Tests: 23
+- Tests run: 23
 - Failures: 0
 - Errors: 0
 - Skipped: 0
-- Build Status: BUILD SUCCESS
+- Build: BUILD SUCCESS
 
-## 10. Known Limitations
+## 10. AI-Assisted Engineering
 
-- H2 is an in-memory database.
-- Explicit locking for concurrent enrollment requests is not implemented.
-- Database-level unique constraints for student-course enrollment pairs are not identified in the current entity.
-- FIFO ordering does not define a secondary ordering for identical timestamps.
-- Dedicated concurrent enrollment testing has not been performed.
+AI was used as an engineering assistant for:
 
-## 11. Project Documentation
+- Assessment requirement analysis.
+- Existing implementation review.
+- Test coverage review.
+- Design specification preparation.
+- Technical risk identification.
+- Documentation preparation.
 
-The following documents are included as part of the assessment:
+AI suggestions were reviewed against the supplied implementation and assessment acceptance criteria.
 
-- DESIGN-SPECIFICATION.md
-- AI-USAGE-RECORD.md
-- README.md
+No AI-generated application code changes are claimed in the AI usage record.
 
-## 12. Assessment Scope
+Refer to `AI-USAGE-RECORD.md` for details.
 
-This implementation focuses exclusively on:
+## 11. Known Limitations and Risks
 
-- Course enrollment.
-- Enrollment cancellation.
-- Prerequisite validation.
-- Capacity management.
-- FIFO waitlist promotion.
+- The application currently uses an H2 in-memory database.
+- Explicit locking is not implemented for enrollment capacity validation.
+- A database-level unique constraint for the student-course pair is not present in the supplied entity.
+- Concurrent enrollment requests could potentially exceed course capacity.
+- Production database behavior and concurrency guarantees have not been demonstrated.
 
-The implementation does not include frontend development, payments, identity integrations, or a complete course-registration platform.
+These limitations are documented as follow-up risks and are not represented as implemented features.
 
+## 12. Project Documentation
+
+The repository includes:
+
+| Document | Purpose |
+|---|---|
+| `README.md` | Project overview and setup instructions |
+| `DESIGN-SPECIFICATION.md` | Architecture, workflow, data model, and design decisions |
+| `AI-USAGE-RECORD.md` | AI prompts, assistance, decisions, and verification evidence |
+| `LIMITATIONS-AND-RISKS.md` | Known limitations and follow-up risks |
+| `Course-Registration-Rubric-Score.md` | Independent evidence-based assessment scorecard; not the official assessment-owner rubric |
+
+## 13. Assessment Scope
+
+This implementation focuses only on the requested one-course-offering enrollment, drop, and FIFO waitlist-promotion workflow.
+
+The project intentionally excludes frontend development, payments, identity integrations, multi-term registration, and additional infrastructure.
+
+---
+
+**Project:** Course Registration – AI-Assisted Engineering Assessment
+
+**Repository:** https://github.com/bhaskar-architect/course-registration-ai-assessment
+
+**Technology:** Java 21 | Spring Boot | Spring Data JPA | H2 | Maven
